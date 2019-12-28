@@ -1,8 +1,27 @@
 #!/usr/bin/env python3
+import re
+import argparse
 from sys import argv
 from email.parser import BytesParser, Parser
 from email.policy import default
-import re
+
+
+## Find and print the user agent from an email header
+#  @param filename the filename of an email (with header) saved as plaintext
+#
+def print_agent(filename):
+    agent = "Not found"
+    next = False
+    with open(filename, "r") as fp:
+        for line in fp:
+            if(next):
+                agent += line
+                next = False
+            if("User-Agent:" in line.split()):
+                tmp = line.split("User-Agent:")
+                agent = tmp[1]
+                next = True
+    print("User-Agent: %s" % agent)
 
 
 ## Extract a valid IPv4 address from a string
@@ -19,6 +38,7 @@ def extract_ip(line):
             return(a.group(0))
         else:
             return("")
+
 
 ## Extract and print the route an email took
 #  @param filename the filename of an email (with header) saved as plaintext
@@ -62,6 +82,8 @@ def print_route(filename):
     print("\n\nHop #: From --> To")
     j = 1
 
+    # Since the headers are analyzed from top to bottom, the route
+    # information is in reverse order
     for i in range(len(order)-1, -1, -2):
         print("Hop {0}: {1} {2} --> {3} {4}" .format(j, order[i-1], ips[i-1], order[i], ips[i]))
         j += 1
@@ -80,9 +102,19 @@ def print_basic(filename):
     print("Subject: {}".format(headers["subject"]))
     print("Date: {}" .format(headers["Date"]))
 
-if(len(argv) != 2):
-    print("%s <filename>" % argv[0])
-    exit(1)
 
-print_basic(argv[1])
-print_route(argv[1])
+if __name__ == '__main__':
+    argp = argparse.ArgumentParser("tracemail.py",
+        description="Analyze and display information from e-mail headers")
+    argp.add_argument("-r", "--route", help="Display route information", action="store_true")
+    argp.add_argument("-u", "--user_agent", help="Display user agent", action="store_true")
+    argp.add_argument("FILE", help="Text file containing an email header to analyze")
+    args = argp.parse_args()
+
+print_basic(args.FILE)
+
+if(args.user_agent):
+    print_agent(args.FILE)
+
+if(args.route):
+    print_route(args.FILE)
