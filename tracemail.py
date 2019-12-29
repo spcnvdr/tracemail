@@ -50,7 +50,7 @@ def print_route(filename):
     found = False
     with open(filename, 'r') as fp:
         for line in fp:
-            if(count == 2):
+            if(count == 5):
                 found = False
                 count = 0
             elif(found):
@@ -63,21 +63,45 @@ def print_route(filename):
     # This array will hold route pairs (from->to) with last hop first
     order= []
     ips = []
+    i = 0
 
-    for i in range(len(rt)):
-        seperated = rt[i].split()
-        if("Received:" in seperated):
-            if("by" not in rt[i+1].split()):
-                order.append("NULL")
-                order.append(seperated[2])
-                ips.append("None")
-                ips.append(extract_ip(rt[i]))
-            else:
-                order.append(seperated[2])
-                ips.append(extract_ip(rt[i]))
-        elif("by" in seperated):
-            order.append(seperated[1])
+    while(i < len(rt)):
+        sep = rt[i].split()
+        if(("Received:" == sep[0]) and ("from" == sep[1]) and ("by" in sep)):
+            f = sep.index("from")
+            order.append(sep[f+1])
             ips.append(extract_ip(rt[i]))
+            b = sep.index("by")
+            order.append(sep[b+1])
+            ips.append(extract_ip(sep[6]))
+        elif(("Received:" in sep) and ("from" in sep)):
+            order.append(sep[2])
+            ips.append(extract_ip(rt[i]))
+            if(i+1 < len(rt) and "by" in rt[i+1]):
+                t = rt[i+1].split()
+                if(t.index("by") == len(t)-1):
+                    tmp = rt[i+2].split()
+                    order.append(tmp[0])
+                    ips.append(extract_ip(rt[i+2]))
+                else:
+                    order.append(t[1])
+                    ips.append(extract_ip(rt[i+1]))
+                i += 1
+            elif(i+2 < len(rt) and "by" in rt[i+2]):
+                t = rt[i+2].split()
+                order.append(t[2])
+                ips.append(extract_ip(rt[i+2]))
+                i += 2
+        elif(("Received:" == sep[0]) and ("by" == sep[1])):
+            order.append("NULL")
+            order.append(sep[2])
+            ips.append("None")
+            ips.append(extract_ip(rt[i]))
+
+
+        i += 1
+
+
 
     print("\n\nHop #: From --> To")
     j = 1
