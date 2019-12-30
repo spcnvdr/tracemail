@@ -1,9 +1,33 @@
 #!/usr/bin/env python3
 import re
 import argparse
-from sys import argv
+from os import path
 from email.parser import BytesParser, Parser
 from email.policy import default
+
+
+## Print the email's originating IP address
+#  @param filename the filename of an email (with header) saved as plaintext
+#
+def print_origin(filename):
+    origin = "Not found"
+    with open(filename, "rb") as fp:
+        headers = BytesParser(policy=default).parse(fp)
+
+    if(headers["x-originating-ip"] != None):
+        origin = headers["x-originating-ip"]
+    print("Originating-IP: {}".format(origin))
+
+
+## Print the email's message ID
+#  @param filename the filename of an email (with header) saved as plaintext
+#
+def print_messageid(filename):
+
+    with open(filename, "rb") as fp:
+        headers = BytesParser(policy=default).parse(fp)
+
+    print("Message-ID: {}".format(headers["Message-ID"]))
 
 
 ## Find and print the user agent from an email header
@@ -62,11 +86,6 @@ def print_route(filename):
                 found = True
 
     # This array will hold route pairs (from->to) with last hop first
-    for i in range(len(rt)):
-        print("{}: {}" .format(i, rt[i]))
-        t = rt[i].split()
-        for j in range(len(t)):
-            print("\t{}: {}" .format(j, t[j]))
     order= []
     ips = []
     i = 0
@@ -133,11 +152,11 @@ def print_route(filename):
 #  @param filename the filename of an email (with header) saved as plaintext
 #
 def print_basic(filename):
-    #If the e-mail headers are in a file, uncomment these two lines:
+
     with open(filename, "rb") as fp:
         headers = BytesParser(policy=default).parse(fp)
 
-    #  Now the header items can be accessed as a dictionary:
+    #  Access the items from the headers dictionary:
     print("To: {}".format(headers["to"]))
     print("From: {}".format(headers["from"]))
     print("Subject: {}".format(headers["subject"]))
@@ -147,15 +166,32 @@ def print_basic(filename):
 if __name__ == '__main__':
     argp = argparse.ArgumentParser("tracemail.py",
         description="Analyze and display information from e-mail headers")
+    argp.add_argument("-a", "--all", help="Display everything", action="store_true")
+    argp.add_argument("-m", "--message_id", help="Display message ID", action="store_true")
+    argp.add_argument("-o", "--origin", help="Display originating IP address", action="store_true")
     argp.add_argument("-r", "--route", help="Display route information", action="store_true")
     argp.add_argument("-u", "--user_agent", help="Display user agent", action="store_true")
     argp.add_argument("FILE", help="Text file containing an email header to analyze")
     args = argp.parse_args()
 
-print_basic(args.FILE)
+    # Make sure arg is a file and exists
+    if(not path.exists(args.FILE)):
+        print("Error: The file %s was not found!" % args.FILE)
+        exit(1)
+    elif(not path.isfile(args.FILE)):
+        print("Error: %s is not a file" % args.FILE)
+        exit(1)
 
-if(args.user_agent):
-    print_agent(args.FILE)
+    print_basic(args.FILE)
 
-if(args.route):
-    print_route(args.FILE)
+    if(args.origin or args.all):
+        print_origin(args.FILE)
+
+    if(args.user_agent or args.all):
+        print_agent(args.FILE)
+
+    if(args.message_id or args.all):
+        print_messageid(args.FILE)
+
+    if(args.route or args.all):
+        print_route(args.FILE)
