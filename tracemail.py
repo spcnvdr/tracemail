@@ -61,6 +61,11 @@ def print_route(filename):
                 found = True
 
     # This array will hold route pairs (from->to) with last hop first
+    for i in range(len(rt)):
+        print("{}: {}" .format(i, rt[i]))
+        t = rt[i].split()
+        for j in range(len(t)):
+            print("\t{}: {}" .format(j, t[j]))
     order= []
     ips = []
     i = 0
@@ -73,7 +78,12 @@ def print_route(filename):
             ips.append(extract_ip(rt[i]))
             b = sep.index("by")
             order.append(sep[b+1])
-            ips.append(extract_ip(sep[6]))
+            # If the recieiving domain name is at the end of the line,
+            # look for its IP on the next line
+            if(i+1 < len(rt)-1 and b+1 == len(sep)-1):
+                ips.append(extract_ip(rt[i+1]))
+            else:
+                ips.append(extract_ip(sep[6]))
         elif(("Received:" in sep) and ("from" in sep)):
             order.append(sep[2])
             ips.append(extract_ip(rt[i]))
