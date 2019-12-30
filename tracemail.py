@@ -15,7 +15,8 @@ def print_agent(filename):
     with open(filename, "r") as fp:
         for line in fp:
             if(next):
-                agent += line
+                if(":" not in line):
+                    agent += line
                 next = False
             if("User-Agent:" in line.split()):
                 tmp = line.split("User-Agent:")
@@ -72,42 +73,48 @@ def print_route(filename):
 
     while(i < len(rt)):
         sep = rt[i].split()
-        if(("Received:" == sep[0]) and ("from" == sep[1]) and ("by" in sep)):
+        if(("Received:" == sep[0]) and ("from" == sep[1])):
             f = sep.index("from")
-            order.append(sep[f+1])
-            ips.append(extract_ip(rt[i]))
-            b = sep.index("by")
-            order.append(sep[b+1])
-            # If the recieiving domain name is at the end of the line,
-            # look for its IP on the next line
-            if(i+1 < len(rt)-1 and b+1 == len(sep)-1):
-                ips.append(extract_ip(rt[i+1]))
-            else:
-                ips.append(extract_ip(sep[6]))
-        elif(("Received:" in sep) and ("from" in sep)):
-            order.append(sep[2])
-            ips.append(extract_ip(rt[i]))
-            if(i+1 < len(rt) and "by" in rt[i+1]):
-                t = rt[i+1].split()
-                if(t.index("by") == len(t)-1):
-                    tmp = rt[i+2].split()
-                    order.append(tmp[0])
-                    ips.append(extract_ip(rt[i+2]))
-                else:
-                    order.append(t[1])
+            if("by" in sep):
+                b = sep.index("by")
+                order.append(sep[f+1])
+                ips.append(extract_ip(rt[i]))
+                if(i+1 < len(rt)-1 and b == len(sep)-1):
+                    next = rt[i+1].split()
+                    order.append(next[0])
                     ips.append(extract_ip(rt[i+1]))
-                i += 1
-            elif(i+2 < len(rt) and "by" in rt[i+2]):
-                t = rt[i+2].split()
-                order.append(t[2])
-                ips.append(extract_ip(rt[i+2]))
-                i += 2
+                elif(b != len(sep)-1):
+                    order.append(sep[b+1])
+                    ips.append(extract_ip(rt[i]))
+                # If the recieiving domain name is at the end of the line,
+                # look for its IP on the next line
+                elif(i+1 < len(rt)-1 and b+1 == len(sep)-1):
+                    ips.append(extract_ip(rt[i+1]))
+                else:
+                    ips.append(extract_ip(sep[6]))
+            else:
+                order.append(sep[f+1])
+                ips.append(extract_ip(rt[i]))
+                if(i+1 < len(rt) and "by" in rt[i+1]):
+                    t = rt[i+1].split()
+                    if(t.index("by") == len(t)-1):
+                        tmp = rt[i+2].split()
+                        order.append(tmp[0])
+                        ips.append(extract_ip(rt[i+2]))
+                    else:
+                        order.append(t[1])
+                        ips.append(extract_ip(rt[i+1]))
+                    i += 1
+                elif(i+2 < len(rt) and "by" in rt[i+2]):
+                    t = rt[i+2].split()
+                    order.append(t[2])
+                    ips.append(extract_ip(rt[i+2]))
+                    i += 2
         elif(("Received:" == sep[0]) and ("by" == sep[1])):
             order.append("NULL")
-            order.append(sep[2])
             ips.append("None")
+            order.append(sep[2])
             ips.append(extract_ip(rt[i]))
-
 
         i += 1
 
