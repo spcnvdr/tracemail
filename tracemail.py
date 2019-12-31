@@ -6,47 +6,21 @@ from email.parser import BytesParser, Parser
 from email.policy import default
 
 
-## Print the email's originating IP address
+## Get all the fields present in an email's headers
 #  @param filename the filename of an email (with header) saved as plaintext
+#  @returns a list of all fields found
 #
-def print_origin(filename):
-    origin = "Not found"
+def get_fields(filename):
+    fields = []
+    # First find all the fields present in the email headers
     with open(filename, "rb") as fp:
         headers = BytesParser(policy=default).parse(fp)
 
-    if(headers["x-originating-ip"] != None):
-        origin = headers["x-originating-ip"]
-    print("Originating-IP: {}".format(origin))
+    # Add each field to a list
+    for i in headers:
+        fields.append(i+":")
 
-
-## Print the email's message ID
-#  @param filename the filename of an email (with header) saved as plaintext
-#
-def print_messageid(filename):
-
-    with open(filename, "rb") as fp:
-        headers = BytesParser(policy=default).parse(fp)
-
-    print("Message-ID: {}".format(headers["Message-ID"]))
-
-
-## Find and print the user agent from an email header
-#  @param filename the filename of an email (with header) saved as plaintext
-#
-def print_agent(filename):
-    agent = "Not found"
-    next = False
-    with open(filename, "r") as fp:
-        for line in fp:
-            if(next):
-                if(":" not in line):
-                    agent += line
-                next = False
-            if("User-Agent:" in line.split()):
-                tmp = line.split("User-Agent:")
-                agent = tmp[1]
-                next = True
-    print("User-Agent: %s" % agent)
+    return(fields)
 
 
 ## Extract a valid IPv4 address from a string
@@ -65,88 +39,119 @@ def extract_ip(line):
             return("")
 
 
+## Creates a list of all the received fields present in the email's headers
+#  @param filename the filename of an email (with header) saved as plaintext
+#  @returns a list of received fields
+#
+def get_received(filename):
+    rt = []
+    rec = []
+    tmp = ""
+    found = False
+
+    fields = get_fields(filename)
+
+    # Parse the file looking for Received fields
+    with open(filename, "r") as fp:
+        for line in fp:
+            sep = line.split()
+            # Found the end of the field , add to rt list
+            if(len(sep) != 0 and sep[0] in fields and found):
+                rt.append(tmp)
+                tmp = ""
+                if(sep[0] != "Received:"):
+                    found = False
+                else:
+                    # The next field is another Received
+                    tmp += line
+            elif(found):
+                # keep adding lines until we hit another field
+                tmp += line
+            elif("Received:" in line.split()):
+                # Found a received field, start adding lines
+                tmp += line
+                found = True
+
+    # Format each received field into a single line and add to rec list
+    for i in rt:
+        rec.append(" ".join(i.split()))
+
+    return(rec)
+
+
 ## Extract and print the route an email took
 #  @param filename the filename of an email (with header) saved as plaintext
 #
 def print_route(filename):
-    # Create an array containing all the lines containg route information
-    rt = []
-    count = 0
-    found = False
-    with open(filename, 'r') as fp:
-        for line in fp:
-            if(count == 5):
-                found = False
-                count = 0
-            elif(found):
-                rt.append(line)
-                count += 1
-            elif("Received:" in line.split()):
-                rt.append(line)
-                found = True
+    ips =[]
+    names = []
+    j = 1
+    rec = get_received(filename)
 
-    # This array will hold route pairs (from->to) with last hop first
-    order= []
-    ips = []
-    i = 0
-
-    while(i < len(rt)):
-        sep = rt[i].split()
-        if(("Received:" == sep[0]) and ("from" == sep[1])):
-            f = sep.index("from")
-            if("by" in sep):
-                b = sep.index("by")
-                order.append(sep[f+1])
-                ips.append(extract_ip(rt[i]))
-                if(i+1 < len(rt)-1 and b == len(sep)-1):
-                    next = rt[i+1].split()
-                    order.append(next[0])
-                    ips.append(extract_ip(rt[i+1]))
-                elif(b != len(sep)-1):
-                    order.append(sep[b+1])
-                    ips.append(extract_ip(rt[i]))
-                # If the recieiving domain name is at the end of the line,
-                # look for its IP on the next line
-                elif(i+1 < len(rt)-1 and b+1 == len(sep)-1):
-                    ips.append(extract_ip(rt[i+1]))
-                else:
-                    ips.append(extract_ip(sep[6]))
-            else:
-                order.append(sep[f+1])
-                ips.append(extract_ip(rt[i]))
-                if(i+1 < len(rt) and "by" in rt[i+1]):
-                    t = rt[i+1].split()
-                    if(t.index("by") == len(t)-1):
-                        tmp = rt[i+2].split()
-                        order.append(tmp[0])
-                        ips.append(extract_ip(rt[i+2]))
-                    else:
-                        order.append(t[1])
-                        ips.append(extract_ip(rt[i+1]))
-                    i += 1
-                elif(i+2 < len(rt) and "by" in rt[i+2]):
-                    t = rt[i+2].split()
-                    order.append(t[2])
-                    ips.append(extract_ip(rt[i+2]))
-                    i += 2
-        elif(("Received:" == sep[0]) and ("by" == sep[1])):
-            order.append("NULL")
+    for i in rec:
+        sep = i.split()
+        if(sep[1] == "by"):
+            names.append("Null")
             ips.append("None")
-            order.append(sep[2])
-            ips.append(extract_ip(rt[i]))
+            names.append(sep[2])
+            ips.append("")
+        else:
+            f = sep.index("from")
+            b = sep.index("by")
+            half = i.split("by")
+            quart = half[1].split("for")
 
-        i += 1
-
-
+            names.append(sep[f+1])
+            ips.append(extract_ip(half[0]))
+            names.append(sep[b+1])
+            ips.append(extract_ip(quart[0]))
 
     print("\n\nHop #: From --> To")
-    j = 1
 
-    # Since the headers are analyzed from top to bottom, the route
-    # information is in reverse order
-    for i in range(len(order)-1, -1, -2):
-        print("Hop {0}: {1} {2} --> {3} {4}" .format(j, order[i-1], ips[i-1], order[i], ips[i]))
+    for i in range(len(names)-1, -1, -2):
+        print("Hop {0}: {1} {2} --> {3} {4}" .format(j, names[i-1], ips[i-1], names[i], ips[i]))
         j += 1
+
+
+## Print the email's originating IP address
+#  @param filename the filename of an email (with header) saved as plaintext
+#
+def print_origin(filename):
+    origin = "Not found"
+    with open(filename, "rb") as fp:
+        headers = BytesParser(policy=default).parse(fp)
+
+    if(headers["x-originating-ip"] != None):
+        origin = headers["x-originating-ip"]
+    print("Originating-IP: %s" % origin)
+
+
+## Print the email's message ID
+#  @param filename the filename of an email (with header) saved as plaintext
+#
+def print_messageid(filename):
+    id = "Not found"
+    with open(filename, "rb") as fp:
+        headers = BytesParser(policy=default).parse(fp)
+
+    if(headers["Message-ID"] != None):
+        id = headers["Message-ID"]
+    print("Message-ID: %s" % id)
+
+
+## Find and print the user agent from an email header
+#  @param filename the filename of an email (with header) saved as plaintext
+#
+def print_agent(filename):
+    agent = "Not found"
+
+    with open(filename, "rb") as fp:
+        headers = BytesParser(policy=default).parse(fp)
+
+    if(headers["User-Agent"] != None):
+        agent = headers["User-Agent"]
+    print("User-Agent: %s" % agent)
+
 
 ## Print basic information about an email
 #  @param filename the filename of an email (with header) saved as plaintext
