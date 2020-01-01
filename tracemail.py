@@ -168,6 +168,40 @@ def print_basic(filename):
     print("Date: {}" .format(headers["Date"]))
 
 
+## Parse email and print information requested via command line arguments
+#  @param filename the filename of an email (with header) saved as plaintext
+#  @param all if true print all the information available
+#  @param messageid if true print message id if present
+#  @param origin print originating IP address if present
+#  @param if true print routing information
+#  @param if true print user agent if present
+#
+def parse_email(filename, all, messageid, origin, route, agent):
+
+    # Make sure it is a normal file and exists
+    if(not path.exists(filename)):
+        print("Error: The file %s was not found!" % args.FILE)
+        exit(1)
+    elif(not path.isfile(filename)):
+        print("Error: %s is not a file" % args.FILE)
+        exit(1)
+
+    print("\nInformation for email: %s" % filename)
+    print_basic(filename)
+
+    if(origin or all):
+        print_origin(filename)
+
+    if(agent or all):
+        print_agent(filename)
+
+    if(messageid or all):
+        print_messageid(filename)
+
+    if(route or all):
+        print_route(filename)
+
+
 if __name__ == '__main__':
     argp = argparse.ArgumentParser("tracemail.py",
         description="Analyze and display information from e-mail headers")
@@ -176,27 +210,10 @@ if __name__ == '__main__':
     argp.add_argument("-o", "--origin", help="Display originating IP address", action="store_true")
     argp.add_argument("-r", "--route", help="Display route information", action="store_true")
     argp.add_argument("-u", "--user_agent", help="Display user agent", action="store_true")
-    argp.add_argument("FILE", help="Text file containing an email header to analyze")
+    argp.add_argument("FILE", help="Text file/s containing an email header to analyze", nargs="+")
     args = argp.parse_args()
 
-    # Make sure arg is a file and exists
-    if(not path.exists(args.FILE)):
-        print("Error: The file %s was not found!" % args.FILE)
-        exit(1)
-    elif(not path.isfile(args.FILE)):
-        print("Error: %s is not a file" % args.FILE)
-        exit(1)
-
-    print_basic(args.FILE)
-
-    if(args.origin or args.all):
-        print_origin(args.FILE)
-
-    if(args.user_agent or args.all):
-        print_agent(args.FILE)
-
-    if(args.message_id or args.all):
-        print_messageid(args.FILE)
-
-    if(args.route or args.all):
-        print_route(args.FILE)
+    for i in args.FILE:
+        parse_email(i, args.all, args.message_id, args.origin, args.route,
+                    args.user_agent)
+        print("_" * 80)
