@@ -2,8 +2,31 @@
 import re
 import argparse
 from os import path
+from datetime import datetime
 from email.parser import BytesParser, Parser
 from email.policy import default
+
+
+## Return the difference between 2 datetimes in seconds
+#  @param datea datetime object o subtract from
+#  @param dateb datetime object to subtract
+#  @returns the difference in seconds as a float
+#
+def time_diff(timea, timeb):
+    diff = timea - timeb
+    return(diff.total_seconds())
+
+
+## Extract the timestamp from a "Received" field
+#  @param A string of the received field
+#  @returns a datetime object of the timestamp from the Received field
+#
+def extract_date(recfield):
+    tmp = recfield.split(";")[1].lstrip()
+    tmp = tmp.split()
+    timestr = " "
+    timestr = timestr.join(tmp[0:6])
+    return(datetime.strptime(timestr, '%a, %d %b %Y %H:%M:%S %z'))
 
 
 ## Get all the fields present in an email's headers
@@ -87,6 +110,7 @@ def print_route(filename):
     names = []
     j = 1
     rec = get_received(filename)
+    #print_delay(rec)
 
     for i in rec:
         sep = i.split()
@@ -111,6 +135,30 @@ def print_route(filename):
     for i in range(len(names)-1, -1, -2):
         print("Hop {0}: {1} {2} --> {3} {4}" .format(j, names[i-1], ips[i-1], names[i], ips[i]))
         j += 1
+
+
+## Print time delay of each hop in the route
+#  @param filename the filename of an email (with header) saved as plaintext
+#
+def print_delay(filename):
+    j = 1
+    total = 0.0
+    routes = get_received(filename)
+    routes.reverse()
+
+    print("\n")
+    print("Hop # |  Delay (in seconds)")
+    print("___________________________")
+    print("{}     |   *" .format(j))
+    for i in range(0, len(routes)-1):
+        timea = extract_date(routes[i+1])
+        timeb = extract_date(routes[i])
+        diff = time_diff(timea, timeb)
+        total += diff
+
+        print("{}     |   {}" .format(j, diff))
+        j += 1
+    print("Total time: {} second/s" .format(total))
 
 
 ## Print the email's originating IP address
@@ -175,8 +223,9 @@ def print_basic(filename):
 #  @param origin print originating IP address if present
 #  @param if true print routing information
 #  @param if true print user agent if present
+#  @param if true print delay in seconds between hops
 #
-def parse_email(filename, all, messageid, origin, route, agent):
+def parse_email(filename, all, messageid, origin, route, agent, delay):
 
     # Make sure it is a normal file and exists
     if(not path.exists(filename)):
@@ -201,11 +250,15 @@ def parse_email(filename, all, messageid, origin, route, agent):
     if(route or all):
         print_route(filename)
 
+    if(delay or all):
+        print_delay(filename)
+
 
 if __name__ == '__main__':
     argp = argparse.ArgumentParser("tracemail.py",
         description="Analyze and display information from e-mail headers")
     argp.add_argument("-a", "--all", help="Display everything", action="store_true")
+    argp.add_argument("-d", "--delay", help="Print delay in seconds between hops", action="store_true")
     argp.add_argument("-m", "--message_id", help="Display message ID", action="store_true")
     argp.add_argument("-o", "--origin", help="Display originating IP address", action="store_true")
     argp.add_argument("-r", "--route", help="Display route information", action="store_true")
@@ -215,5 +268,5 @@ if __name__ == '__main__':
 
     for i in args.FILE:
         parse_email(i, args.all, args.message_id, args.origin, args.route,
-                    args.user_agent)
+                    args.user_agent, args.delay)
         print("_" * 80)
