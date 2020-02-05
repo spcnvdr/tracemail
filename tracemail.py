@@ -78,7 +78,7 @@ def get_fields(filename):
     return(fields)
 
 
-## Extract a valid IPv4 address from a string
+## Extract the string contained in either brackets or parentheses
 #  @param line The string to search
 #  @returns The IPv4 Address found, or an empty string
 #
@@ -162,7 +162,7 @@ def print_route(filename):
             names.append(sep[b+1])
             ips.append(extract_ip(quart[0]))
 
-    print("\n\nHop #: From --> To")
+    print("\n\nHop #: From --> By")
 
     for i in range(len(names)-1, -1, -2):
         print("Hop {0}: {1} {2} --> {3} {4}" .format(j, names[i-1], ips[i-1], names[i], ips[i]))
@@ -190,7 +190,13 @@ def print_delay(filename):
 
         print("{}     |   {}" .format(j, diff))
         j += 1
-    print("Total time: {} second/s" .format(total))
+
+    if(total//60 != 0):
+        min = int(total // 60)
+        sec = int(total % 60)
+        print("Total time: {} minutes {} seconds" .format(min, sec))
+    else:
+        print("Total time: {} second/s" .format(total))
 
 
 ## Print the email's originating IP address
