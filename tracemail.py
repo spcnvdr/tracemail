@@ -181,7 +181,7 @@ def print_delay(filename):
     print("\n")
     print("Hop # |  Delay (in seconds)")
     print("___________________________")
-    print("{}     |   *" .format(j))
+    print("0     |   *")
     for i in range(0, len(routes)-1):
         timea = extract_date(routes[i+1])
         timeb = extract_date(routes[i])

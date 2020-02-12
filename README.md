@@ -2,13 +2,13 @@
 
 **Description**
 
-Tracemail is a small, simply Python 3.X.X script to print information about
-an e-mail. Tracemail analyzes different aspects of e-mail headers and prints
-the information. This script was created to provide a simple program
-for analyzing e-mail headers with as few dependencies as possible. This
-program takes one or more e-mails in plain text format as input. Simply
-copy the source of an email, including the headers, and paste it into
-a plain text file.
+Tracemail is a small, simple Python 3.X.X script to print information about
+an e-mail. Tracemail analyzes the headers of an e-mail and prints
+information, such as the route the e-mail took, time per hop, etc.
+This script was created to provide a simple program for analyzing e-mail
+headers with as few dependencies as possible. This program takes one or more
+e-mails in plain text format as input. Simply copy the source of an email,
+including the headers, and paste it into a plain text file.
 
 
 **Getting Started**
@@ -40,6 +40,7 @@ Multiple e-mails can be specified at once to process multiple e-mails.
 
 - [ ] Add an option to print the location of an IP address using GeoIP
 - [ ] Parse and display authentication information
+- [ ] Add info about how to view e-mail headers in different mail clients
 
 
 **Contributing**
