@@ -30,13 +30,17 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.               #
 #                                                                            #
 # A simple Python 3.X.X script to analyze e-mail/s saved as plain text.      #
+#                                                                            #
 ##############################################################################
 import re
 import argparse
 from os import path
 from datetime import datetime
+from dateutil import parser
 from email.parser import BytesParser, Parser
 from email.policy import default
+
+import drawbox
 
 
 ## Return the difference between 2 datetimes in seconds
@@ -51,14 +55,29 @@ def time_diff(timea, timeb):
 
 ## Extract the timestamp from a "Received" field
 #  @param A string of the received field
-#  @returns a datetime object of the timestamp from the Received field
+#  @returns a datetime object of the timestamp from the Received field,
+#  or an error string if a format error was encountered
 #
 def extract_date(recfield):
-    tmp = recfield.split(";")[1].lstrip()
-    tmp = tmp.split()
-    timestr = " "
-    timestr = timestr.join(tmp[0:6])
-    return(datetime.strptime(timestr, '%a, %d %b %Y %H:%M:%S %z'))
+    reg = ""
+    if(re.search('\S{3},[ ]{0,4} \d{1,2} \S{3} \d{1,4} \d{2}:\d{2}:\d{2} [+-]\d{4}', recfield) != None):
+        # Standard date format: Sat, 28 Dec 2019 18:11:46 -0800
+        reg = re.search('\S{3},[ ]{0,4} \d{1,2} \S{3} \d{1,4} \d{2}:\d{2}:\d{2} [+-]\d{4}', recfield).group()
+
+    elif(re.search('\S{3}, \d{2} \S{3} \d{1,4} \d{2}:\d{2}:\d{2}.\d{0,10} [+-]\d{4}', recfield) != None):
+        # Standard format but with fractions of a second: Tue, 21 Jan 2020 17:45:40.233 +0000
+        reg = re.search('\S{3}, \d{2} \S{3} \d{1,4} \d{2}:\d{2}:\d{2}.\d{0,10} [+-]\d{4}', recfield).group()
+
+    elif(re.search('\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}\.\d{0,10} [+-]\d{4}', recfield) != None):
+        # Will match: '2020-01-21 17:45:40.209405196 +0000'
+        reg = re.search('\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}\.\d{0,10} [+-]\d{4}', recfield).group()
+
+    else:
+        print("Debug: '%s'\n" % recfield)
+        return("Unkonwn date format")
+
+    return(parser.parse(reg))
+
 
 
 ## Get all the fields present in an email's headers
@@ -142,7 +161,6 @@ def print_route(filename):
     names = []
     j = 1
     rec = get_received(filename)
-    #print_delay(rec)
 
     for i in rec:
         sep = i.split()
@@ -173,30 +191,37 @@ def print_route(filename):
 #  @param filename the filename of an email (with header) saved as plaintext
 #
 def print_delay(filename):
-    j = 1
+    j = 2
     total = 0.0
     routes = get_received(filename)
     routes.reverse()
 
-    print("\n")
-    print("Hop # |  Delay (in seconds)")
-    print("___________________________")
-    print("0     |   *")
+    drawbox.print_heading()
+    drawbox.print_row("1", "*")
+    if(len(routes) <= 2):
+        drawbox.print_end()
+    else:
+        drawbox.print_sep()
+
     for i in range(0, len(routes)-1):
         timea = extract_date(routes[i+1])
         timeb = extract_date(routes[i])
-        diff = time_diff(timea, timeb)
-        total += diff
 
-        print("{}     |   {}" .format(j, diff))
-        j += 1
+        if(type(timea) == str or type(timeb) == str):
+            print("{}     |   Invalid date" .format(j))
+            j += 1
+            continue
+        else:
+            diff = time_diff(timea, timeb)
+            total += diff
+            drawbox.print_row(j, diff)
+            j += 1
+            if(i == len(routes)-2):
+                drawbox.print_end()
+            else:
+                drawbox.print_sep()
 
-    if(total//60 != 0):
-        min = int(total // 60)
-        sec = int(total % 60)
-        print("Total time: {} minutes {} seconds" .format(min, sec))
-    else:
-        print("Total time: {} second/s" .format(total))
+    drawbox.print_total(total)
 
 
 ## Print the email's originating IP address
