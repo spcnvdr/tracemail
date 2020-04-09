@@ -224,44 +224,19 @@ def print_delay(filename):
     drawbox.print_total(total)
 
 
-## Print the email's originating IP address
+## Find a field and print it if present
 #  @param filename the filename of an email (with header) saved as plaintext
+#  @param field name of the field to print
+#  @param desc a description to be printed about the field
 #
-def print_origin(filename):
-    origin = "Not found"
+def print_field(filename, field, desc):
+    content = "Not found"
     with open(filename, "rb") as fp:
         headers = BytesParser(policy=default).parse(fp)
 
-    if(headers["x-originating-ip"] != None):
-        origin = headers["x-originating-ip"]
-    print("Originating-IP: %s" % origin)
-
-
-## Print the email's message ID
-#  @param filename the filename of an email (with header) saved as plaintext
-#
-def print_messageid(filename):
-    id = "Not found"
-    with open(filename, "rb") as fp:
-        headers = BytesParser(policy=default).parse(fp)
-
-    if(headers["Message-ID"] != None):
-        id = headers["Message-ID"]
-    print("Message-ID: %s" % id)
-
-
-## Find and print the user agent from an email header
-#  @param filename the filename of an email (with header) saved as plaintext
-#
-def print_agent(filename):
-    agent = "Not found"
-
-    with open(filename, "rb") as fp:
-        headers = BytesParser(policy=default).parse(fp)
-
-    if(headers["User-Agent"] != None):
-        agent = headers["User-Agent"]
-    print("User-Agent: %s" % agent)
+    if(headers[field] != None):
+        content = headers[field]
+    print("%s: %s" % (desc, content))
 
 
 ## Print basic information about an email
@@ -302,13 +277,13 @@ def parse_email(filename, all, messageid, origin, route, agent, delay):
     print_basic(filename)
 
     if(origin or all):
-        print_origin(filename)
+        print_field(filename, "x-originating-ip", "Originating-IP")
 
     if(agent or all):
-        print_agent(filename)
+        print_field(filename, "User-Agent", "Usaer Agent")
 
     if(messageid or all):
-        print_messageid(filename)
+        print_field(filename, "Message-ID", "Message-ID")
 
     if(route or all):
         print_route(filename)
