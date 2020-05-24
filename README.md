@@ -24,7 +24,7 @@ Get a copy of the source code and change into the tracemail directory.
 
     cd tracemail
 
-Then install any required packages. The goal was tp use only the Python
+Then install any required packages. The goal was to use only the Python
 standard library, but the python-dateutils package made life a
 lot easier when parsing date strings
 
