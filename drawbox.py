@@ -35,16 +35,16 @@
 ##############################################################################
 
 
-## Print the start of the table used to display hop delays
+# Print the start of the table used to display hop delays
 #
 def print_heading():
     print("\n")
     print("\u250C" + "\u2500"*7 + "\u252C" + "\u2500"*20 + "\u2510")
-    print("\u2502" +" Hop # " + "\u2502" +  " Delay (in seconds) " + "\u2502")
+    print("\u2502" + " Hop # " + "\u2502" + " Delay (in seconds) " + "\u2502")
     print("\u251c" + "\u2500" * 7 + "\u253c" + "\u2500" * 20 + "\u2524")
 
 
-## Print a row in the hop delay table
+# Print a row in the hop delay table
 #  @param hop the hop number to display in the row
 #  @param delay the delay time to display in the row
 #
@@ -54,23 +54,23 @@ def print_row(hop, delay):
     print("\u2502" + h_format + "\u2502" + d_format + "\u2502")
 
 
-## Print the separator between rows of data in the table
+# Print the separator between rows of data in the table
 #
 def print_sep():
     print("\u251c" + "\u2500" * 7 + "\u253c" + "\u2500" * 20 + "\u2524")
 
 
-## Print the end the table
+# Print the end the table
 #
 def print_end():
     print("\u2514" + "\u2500" * 7 + "\u2534" + "\u2500" * 20 + "\u2518")
 
 
-## Print the total delay time centered in a nice format
+# Print the total delay time centered in a nice format
 #
 def print_total(time):
 
-    if(time//60 != 0):
+    if time//60 != 0:
         mins = int(time // 60)
         sec = int(time % 60)
         output = "Total: " + str(mins) + " min. " + str(sec) + " sec."
