@@ -1,36 +1,7 @@
 #!/usr/bin/env python3
 ##############################################################################
-# Copyright 2020 spcnvdr <spcnvdrr@protonmail.com>                           #
-#                                                                            #
-# Redistribution and use in source and binary forms, with or without         #
-# modification, are permitted provided that the following conditions         #
-# are met:                                                                   #
-#                                                                            #
-# 1. Redistributions of source code must retain the above copyright notice,  #
-# this list of conditions and the following disclaimer.                      #
-#                                                                            #
-# 2. Redistributions in binary form must reproduce the above copyright       #
-# notice, this list of conditions and the following disclaimer in the        #
-# documentation and/or other materials provided with the distribution.       #
-#                                                                            #
-# 3. Neither the name of the copyright holder nor the names of its           #
-# contributors may be used to endorse or promote products derived from       #
-# this software without specific prior written permission.                   #
-#                                                                            #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS        #
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT          #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR      #
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT       #
-# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,     #
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED   #
-# TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR     #
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF     #
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING       #
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS         #
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.               #
-#                                                                            #
 # A simple Python 3.X.X script to analyze e-mail/s saved as plain text.      #
-#                                                                            #
+# Copyright 2020 spcnvdr <spcnvdrr@protonmail.com>                           #
 ##############################################################################
 import re
 import argparse
@@ -38,13 +9,14 @@ from os import path
 from dateutil import parser
 from email.parser import BytesParser
 from email.policy import default
+from collections import deque
 
 import drawbox
 
 
 # Return the difference between 2 datetimes in seconds
-#  @param datea datetime object o subtract from
-#  @param dateb datetime object to subtract
+#  @param timea datetime object to subtract from
+#  @param timeb datetime object to subtract
 #  @returns the difference in seconds as a float
 #
 def time_diff(timea, timeb):
@@ -167,34 +139,34 @@ def get_received(filename):
 #  @param filename the filename of an email (with header) saved as plaintext
 #
 def print_route(filename):
-    ips = []
-    names = []
+    ips = deque()
+    names = deque()
     j = 1
     rec = get_received(filename)
 
     for k in rec:
         sep = k.split()
         if sep[1] == "by":
-            names.append("Null")
-            ips.append("None")
-            names.append(sep[2])
-            ips.append("")
+            names.appendleft("Null")
+            ips.appendleft("None")
+            names.appendleft(sep[2])
+            ips.appendleft("")
         else:
             f = sep.index("from")
             b = sep.index("by")
             half = k.split("by")
             quart = half[1].split("for")
 
-            names.append(sep[f+1])
-            ips.append(extract_meta(half[0]))
-            names.append(sep[b+1])
-            ips.append(extract_meta(quart[0]))
+            names.appendleft(sep[f+1])
+            ips.appendleft(extract_meta(half[0]))
+            names.appendleft(sep[b+1])
+            ips.appendleft(extract_meta(quart[0]))
 
     print("\n\nHop #: From --> By")
 
-    for k in range(len(names) - 1, -1, -2):
-        print("Hop {0}: {1} {2} --> {3} {4}" .format(j, names[k - 1],
-                                                     ips[k - 1], names[k],
+    for k in range(0, len(names), 2):
+        print("Hop {0}: {1} {2} --> {3} {4}" .format(j, names[k + 1],
+                                                     ips[k + 1], names[k],
                                                      ips[k]))
         j += 1
 
@@ -210,11 +182,7 @@ def print_delay(filename):
 
     drawbox.print_heading()
     drawbox.print_row("1", "*")
-    if len(routes) <= 2:
-        drawbox.print_end()
-    else:
-        drawbox.print_sep()
-
+    drawbox.print_sep()
     for k in range(0, len(routes)-1):
         timea = extract_date(routes[k+1])
         timeb = extract_date(routes[k])
@@ -228,10 +196,7 @@ def print_delay(filename):
             total += diff
             drawbox.print_row(j, diff)
             j += 1
-            if k == len(routes)-2:
-                drawbox.print_end()
-            else:
-                drawbox.print_sep()
+            drawbox.print_sep()
 
     drawbox.print_total(total)
 
