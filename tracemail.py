@@ -84,11 +84,11 @@ def get_fields(filename):
 #  @returns The string found, or an empty string
 #
 def extract_meta(line):
-    ip = re.search("\[(.*?)\]", line)
+    ip = re.search(r"\[(.*?)\]", line)
     if ip:
         return ip.group(0)
     else:
-        a = re.search("\((.*?)\)", line)
+        a = re.search(r"\((.*?)\)", line)
         if a:
             return a.group(0)
         else:
