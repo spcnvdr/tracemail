@@ -257,7 +257,7 @@ def parse_email(filename, doall, messageid, origin, route, agent, delay):
         print_field(filename, "x-originating-ip", "Originating-IP")
 
     if agent or doall:
-        print_field(filename, "User-Agent", "Usaer Agent")
+        print_field(filename, "User-Agent", "User Agent")
 
     if messageid or doall:
         print_field(filename, "Message-ID", "Message-ID")
